@@ -1,0 +1,90 @@
+<style>
+
+	.board {
+		margin: 8px auto;
+	}
+	.board td {
+		height: 100px;
+		width: 80px;
+		border: 1px solid;
+	}
+
+	.hand {
+		text-align: center;
+		margin: 8px;
+	}
+
+	.card {
+		display: inline-block;
+		position: relative;
+		height: 100px;
+		width: 80px;
+		border: 1px solid;
+	}
+	.card > * {
+		position: absolute;
+		height: 16px;
+		width: 16px;
+		text-align: center;
+		line-height: 16px;
+	}
+
+	.card-top { 
+		top: 0;
+		left: 50%;
+		margin-left: -8px;
+	}
+	.card-right { 
+		right: 0;
+		top: 50%;
+		margin-top: -8px;
+	}
+	.card-bottom { 
+		bottom: 0;
+		left: 50%;
+		margin-left: -8px;
+	}
+	.card-left { 
+		left: 0;
+		top: 50%;
+		margin-top: -8px;
+	}
+</style>
+
+<template>
+	<section>
+		<div class="hand" >
+			<div class="card" draggable="true" dragstart.delegate="$parent.dragstart()" repeat.for="card of player2.hand">
+				<div class="card-top">${card.top}</div>
+				<div class="card-right">${card.right}</div>
+				<div class="card-bottom">${card.bottom}</div>
+				<div class="card-left">${card.left}</div>
+			</div>
+		</div>
+		<table class="board"><tbody>
+			<tr>
+				<td x="1" y="1" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="2" y="1" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="3" y="1" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+			</tr>
+			<tr>
+				<td x="1" y="2" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="2" y="2" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="3" y="2" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+			</tr>
+			<tr>
+				<td x="1" y="3" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="2" y="3" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+				<td x="3" y="3" dragover.delegate="dragover()" dragleave.delegate="dragleave()" drop.delegate="drop()"></td>
+			</tr>
+		</tbody></table>
+		<div class="hand">
+			<div class="card" draggable="true" dragstart.delegate="dragover()" repeat.for="card of player1.hand">
+				<div class="card-top">${card.top}</div>
+				<div class="card-right">${card.right}</div>
+				<div class="card-bottom">${card.bottom}</div>
+				<div class="card-left">${card.left}</div>
+			</div>
+		</div>
+	</section>
+</template>
