@@ -1,11 +1,11 @@
 var path = require('path');
 
+var appRoot = 'app/';
+
 module.exports = {
-  source:'src/**/*.js',
-  html:'src/**/*.html',
-  style:'styles/**/*.css',
-  output:'dist/',
-  doc:'./doc',
-  e2eSpecsSrc: 'test/e2e/src/*.js',
-  e2eSpecsDist: 'test/e2e/dist/'
+  root: appRoot,
+  source: appRoot + '**/*.js',
+  html: appRoot + '**/*.html',
+  style: 'styles/**/*.css',
+  output: 'dist/'
 };

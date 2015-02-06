@@ -3,8 +3,10 @@ System.config({
     "*": "*.js",
     "github:*": "jspm_packages/github/*.js",
     "npm:*": "jspm_packages/npm/*.js",
-    "aurelia-skeleton-navigation/*": "lib/*.js"
-  }
+    "kyu-core": "main.js",
+    "kyu-html-client/*": "lib/*.js"
+  },
+  "transpiler": "6to5"
 });
 
 System.config({
