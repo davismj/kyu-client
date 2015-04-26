@@ -1,35 +1,37 @@
-import { Metadata } from 'aurelia-framework';
-import { Card } from 'kyu-core';
+import { Game, Player, Card } from 'kyu-core';
+
 export class App {
-	static metadata() { return Metadata.singleton(); }
+	
 	constructor() { 
-		this.currentView = 'start';
-	}
-	startGame() {
 		this.currentView = 'game';
-		this.player2 = { hand: [] };
-		this.player1 = { hand: [] };
+		window.player1 = this.player1 = Player.new('Player 1');
+		this.player2 = Player.new('Player 2');
+		this.newGame(); // this.currentView = 'start'; 
+	}
+
+	newGame() {
+		var game = Game.new(),
+			p1 = this.player1,
+			p2 = this.player2;
 		for (var i = 0; i < 5; i++) {
-			this.player1.hand.push(Card.random());
-			this.player2.hand.push(Card.random());
+			p1.cards.push(Card.random());
+			p2.cards.push(Card.random());
 		}
+		game.add(p1, p1.cards.slice());
+		game.add(p2, p2.cards.slice());
+		game.start();
+		this.game = game;
 	}
-	dragstart() {
-		var event = this.$event;
-		event.dataTransfer.setData('card', event.target);
-	}
-	dragover() {
-		var target = this.$event.currentTarget;
-		target.style.background = 'red';
-	}
-	dragleave() {
-		var target = this.$event.currentTarget;
-		target.style.background = '';
-	}
-	drop() {
-		var target = this.$event.currentTarget,
-			card = this.$event.dataTransfer.getData('card');
-		// card.remove();
-		target.appendChild(card);
+
+	onCardDragstart(event) {
+		var player = this.game.turn,
+			card = this.game.hands.get(player)
+				.find(c => c.id == event.target.id);
+		if (card) {
+
+			// TODO fix
+			window.cardInPlay = card;
+			return true;
+		}
 	}
 }
