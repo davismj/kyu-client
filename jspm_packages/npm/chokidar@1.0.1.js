@@ -1,1 +1,0 @@
-module.exports = require("npm:chokidar@1.0.1/index");
