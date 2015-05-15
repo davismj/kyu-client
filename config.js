@@ -23,8 +23,8 @@ System.config({
     "aurelia-framework": "github:aurelia/framework@0.11.0",
     "aurelia-http-client": "github:aurelia/http-client@0.8.1",
     "aurelia-router": "github:aurelia/router@0.8.1",
-    "babel": "npm:babel-core@5.4.1",
-    "babel-runtime": "npm:babel-runtime@5.4.1",
+    "babel": "npm:babel-core@5.4.2",
+    "babel-runtime": "npm:babel-runtime@5.4.2",
     "core-js": "github:zloirock/core-js@0.9.2",
     "kyu-core": "../lib/kyu-core/main",
     "github:aurelia/binding@0.6.1": {
