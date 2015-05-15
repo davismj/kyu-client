@@ -1,21 +1,26 @@
 import { inject, bindable } from 'aurelia-framework';
-import {ObserverLocator} from 'aurelia-binding';
+import { ObserverLocator } from 'aurelia-binding';
+import { App } from 'app';
 
-@inject(ObserverLocator)
+const successColor = '#9AB27C';
+
+@inject(ObserverLocator, App)
 @bindable('game')
 export class BoardCustomElement {
 
 	// @bindable game;
 
-	constructor(obsLoc) {
+	constructor(obsLoc, app) {
 		this.updateBoard = () => {
 			if (this.game) {
 				obsLoc.getObserver(this.game, 'board')
 					.trigger(this.game.board);	
 			}
 		};
+		this.player1 = app.player1;
 	}
 
+	// TODO remove when repeat.for="i of 5" is supported
 	range(n) {
 		var arr = [];
 		while (n > 0) {
@@ -26,7 +31,7 @@ export class BoardCustomElement {
 
 	isOwned(x, y) {
 		var card = this.game.board[x + 3*y];
-		return card && card.owner == window.player1;
+		return card && card.owner == this.player1;
 	}
 
 	getCard(x,y) {
@@ -52,7 +57,9 @@ export class BoardCustomElement {
 	onDragover(event) {
 		var [target, game, player, card, position] = this.getPlay(event),
 			canPlay = game.canPlay(player, card, position);
-		target.style.background = canPlay ? 'green' : 'red';
+		if (canPlay) {
+			target.style.background = successColor;
+		}
 	}
 	onDragleave(event) {
 		var target = event.currentTarget;
