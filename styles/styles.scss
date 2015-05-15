@@ -1,19 +1,47 @@
-body {
-    background: rgb(32,0,0);
+$primary-background: #FFFAF8;
+$primary-color: #58707B;
 
-    main {
-        background: rgb(224, 208, 96);
-        height: 600px; 
-        width: 600px;
-        margin: auto;
+$secondary-background: #E2EBD7;
+
+* {
+	box-sizing: border-box;
+}
+
+button {
+	font-family: inherit;
+  background: $secondary-background;
+  border: 0;
+  border-radius: 4px;	
+}
+
+body {
+  background: $primary-background;
+  font-family: 'Quicksand', sans-serif;
+
+  main {
+    height: 600px; 
+    width: 600px;
+    margin: auto;
+    padding: 4em;
+
+    h1, img:first-of-type {
+    	font-size: 2em;
+    	color: $primary-color;
     }
+
+    button { 
+		  
+		  padding: 0.5em;
+		  font-size: 1.25em;
+    }
+  }
 }
 
 board {
 	table {
 		margin: 8px auto;
 		border-spacing: 0;
-		background: white;
+		background: $secondary-background;
 		
 		td {
 			height: 100px;
@@ -21,13 +49,8 @@ board {
 			padding: 0;
 			border: 1px solid;
 
-			.won {   
-				background: rgb(128, 128, 176);
-		  		color: white;
-			}
-			.lost {  
-				color: white;
-		  		background: rgb(176, 128, 128);
+			card { 
+				margin-bottom: -4px;
 			}
 		}
 	}
@@ -75,6 +98,60 @@ card {
 		margin-top: -8px;
 	}
 }
+card.won {
+	color: #FFFAF8;
+	background: #58707B;
+		
+}
+card.lost {
+	color: #F8FAFF;
+	background: #C39489;
+}
 card + card {
 	margin-left: 2px;
+}
+
+.block {
+	display: block!important;
+}
+.inline {
+	display: inline-block!important;
+}
+
+.text-center {
+	text-align: center;
+}
+
+.modal {
+	content:"";
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	background: rgba(0,0,0,0.75);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+	div {
+		padding: 1em 2em;
+		border-radius: 8px;
+  	background: rgba(255,255,255,0.95);
+  }
+
+  transition: opacity 0.4s ease;
+}
+.modal:not(.show) {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.enter-top > div {
+  transition: margin-top 0.4s ease;
+}
+.enter-top:not(.show) > div {
+	margin-top: -50%;
 }
