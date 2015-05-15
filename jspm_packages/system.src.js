@@ -1,5 +1,5 @@
 /*
- * SystemJS v0.16.8
+ * SystemJS v0.16.11
  */
 
 (function($__global, $__globalName) {
@@ -653,7 +653,8 @@ function register(loader) {
 
     var module = entry.module = { exports: exports, id: entry.name };
 
-    function linkDeps() {
+    // AMD requires execute the tree first
+    if (!entry.executingRequire) {
       for (var i = 0, l = entry.normalizedDeps.length; i < l; i++) {
         var depName = entry.normalizedDeps[i];
         // we know we only need to link dynamic due to linking algorithm
@@ -662,10 +663,6 @@ function register(loader) {
           linkDynamicModule(depEntry, loader);
       }
     }
-
-    // AMD requires execute the tree first
-    if (!entry.executingRequire)
-      linkDeps();
 
     // now execute
     entry.evaluated = true;
@@ -677,11 +674,6 @@ function register(loader) {
       }
       throw new TypeError('Module ' + name + ' not declared as a dependency.');
     }, exports, module);
-
-    // in case we missed anything, link it now
-    // this does mean that deferred execution isn't supported
-    if (entry.executingRequire)
-      linkDeps();
     
     if (output)
       module.exports = output;
@@ -1151,7 +1143,7 @@ function cjs(loader) {
 
   // CJS Module Format
   // require('...') || exports[''] = ... || exports.asd = ... || module.exports = ...
-  var cjsExportsRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.]|module\.)(exports\s*\[['"]|\exports\s*\.)|(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])module\.exports\s*\=/;
+  var cjsExportsRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.]|module\.)exports\s*(\[['"]|\.)|(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])module\.exports\s*[=,]/;
   // RegEx adjusted from https://github.com/jbrantly/yabble/blob/master/lib/yabble.js#L339
   var cjsRequireRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF."'])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
   var commentRegEx = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg;
@@ -1174,7 +1166,7 @@ function cjs(loader) {
   }
 
   if (typeof location != 'undefined' && location.origin)
-    var curOrigin = location.origin;
+    var curOrigin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '');
 
   var loaderInstantiate = loader.instantiate;
   loader.instantiate = function(load) {
@@ -2334,10 +2326,7 @@ var $__curScript, __eval;
     }
   };
 
-  if ($__global.chrome && chrome.extension) {
-    doEval = 0 || eval; // for uglify
-  }
-  else if (typeof document != 'undefined') {
+  if (typeof document != 'undefined') {
     var head;
 
     var scripts = document.getElementsByTagName('script');
