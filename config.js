@@ -1,7 +1,7 @@
 System.config({
   "transpiler": "babel",
   "babelOptions": {
-    "stage": 0,
+    "stage": 2,
     "optional": [
       "runtime",
       "es7.decorators",

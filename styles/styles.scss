@@ -3,6 +3,8 @@ $primary-color: #58707B;
 
 $secondary-background: #E2EBD7;
 
+$success: #9AB27C;
+
 * {
 	box-sizing: border-box;
 }
@@ -59,6 +61,15 @@ board {
 .hand {
 	text-align: center;
 	margin: 8px;
+}
+
+.hand.is-active:before {
+	content: "\25B6";
+	margin-left: -32px;
+	line-height: 98px;
+	font-size: 4em;
+	vertical-align: top;
+	color: $success;
 }
 
 card {
