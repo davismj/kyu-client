@@ -1,22 +1,15 @@
 import { inject, bindable } from 'aurelia-framework';
-import { ObserverLocator } from 'aurelia-binding';
 import { App } from 'app';
 
 const successColor = '#9AB27C';
 
-@inject(ObserverLocator, App)
+@inject(App)
 @bindable('game')
 export class BoardCustomElement {
 
 	// @bindable game;
 
-	constructor(obsLoc, app) {
-		this.updateBoard = () => {
-			if (this.game) {
-				obsLoc.getObserver(this.game, 'board')
-					.trigger(this.game.board);	
-			}
-		};
+	constructor(app) {]
 		this.player1 = app.player1;
 	}
 
@@ -25,21 +18,6 @@ export class BoardCustomElement {
 		var arr = [];
 		while (n > 0) {
 			arr.unshift(--n);
-		}
-		return arr;
-	}
-
-	isOwned(x, y) {
-		var card = this.game.board[x + 3*y];
-		return card && card.owner == this.player1;
-	}
-
-	getCard(x,y) {
-		var pos = x + 3*y,
-			card = this.game.board[pos],
-			arr = [];
-		if (card) {
-			arr.push(card);
 		}
 		return arr;
 	}
@@ -73,8 +51,6 @@ export class BoardCustomElement {
 
 			// then play the card at the position
 			game.play(player, card, position);
-
-			this.updateBoard();
 		}
 
 		// otherwise reset the ui
