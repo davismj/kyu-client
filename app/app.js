@@ -1,4 +1,4 @@
-import { Game, Player, Card } from 'kyu-core';
+import { Game, Player, ComputerPlayer, Card } from 'kyu-core';
 
 export class App {
 	
@@ -10,15 +10,14 @@ export class App {
 	newGame() {
 		var game = Game.new(),
 			p1 = this.player1,
-			p2 = this.player2 = Player.new('Player 2');
-		for (var i = 0; i < 5; i++) {
+			p2 = this.player2 = ComputerPlayer.new();
+		for (let i = 0; i < 5; i++) {
 			p1.cards.push(Card.random());
-			p2.cards.push(Card.random());
 		}
 		game.add(p1, p1.cards.slice());
-		game.add(p2, p2.cards.slice());
+		game.add(p2, p2.chooseHand());
 		game.start();
-		
+
 		this.game = game;
 		this.currentView = 'game';
 	}

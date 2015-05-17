@@ -2,11 +2,6 @@
 	<require from="../components/card"></require>
 	<require from="../components/board"></require>
 
-	<!-- if playing -->
-	<template if.bind="game.status == 'playing'">
-		<h1>${game.turn}'s turn</h1>
-	</template>
-
 	<!-- if ended -->
 	<div class="modal text-center enter-top ${game.status == 'ended' ? 'show' : ''}">
 		<div>
@@ -16,11 +11,11 @@
 	</div>
 	
 	<section>
-		<div class="hand">
+		<div class="hand ${game.turn == player2 ? 'is-active' : ''}">
 			<card class="lost" model.bind="card" draggable="true" dragstart.delegate="$parent.onCardDragstart($event)" repeat.for="card of game.hands.get(player2)"></card>
 		</div>
 		<board game.bind="game"></board>
-		<div class="hand">
+		<div class="hand ${game.turn == player1 ? 'is-active' : ''}">
 			<card class="won" model.bind="card" draggable="true" dragstart.delegate="$parent.onCardDragstart($event)" repeat.for="card of game.hands.get(player1)"></card>
 		</div>
 	</section>
