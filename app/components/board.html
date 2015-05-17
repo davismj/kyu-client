@@ -1,0 +1,8 @@
+<template>
+	<require from="./card"></require>
+	<table><tr repeat.for="row of range(game.board.height)">
+		<td repeat.for="col of $parent.range($parent.game.board.width)" data-pos="${col + 3 * $parent.row}" dragover.delegate="$parent.$parent.onDragover($event)" dragleave.delegate="$parent.$parent.onDragleave($event)" drop.delegate="$parent.$parent.onDrop($event)">
+			<card model.bind="card" class="${$parent.$parent.$parent.isOwned($parent.col, $parent.$parent.row) ? 'won' : 'lost'}" repeat.for="card of $parent.$parent.getCard(col, $parent.row)"><card>
+		</td>
+	</tr></table>
+</template>
