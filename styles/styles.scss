@@ -32,9 +32,8 @@ body {
     }
 
     button { 
-		  
-		  padding: 0.5em;
-		  font-size: 1.25em;
+	  padding: 0.5em;
+	  font-size: 1.25em;
     }
   }
 }
@@ -56,6 +55,12 @@ board {
 			}
 		}
 	}
+}
+
+.title {
+	font-family: 'Oregano', cursive;
+	font-weight: normal;
+	font-size: 6em;
 }
 
 .hand {
