@@ -9,7 +9,7 @@ export class BoardCustomElement {
 
 	// @bindable game;
 
-	constructor(app) {]
+	constructor(app) {
 		this.player1 = app.player1;
 	}
 
