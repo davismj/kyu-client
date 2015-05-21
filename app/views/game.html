@@ -11,12 +11,16 @@
 	</div>
 	
 	<section>
+		<div class="player-name text-left">${player2}</div>
 		<div class="hand ${game.turn == player2 ? 'is-active' : ''}">
-			<card class="lost" model.bind="card" draggable="true" dragstart.delegate="$parent.onCardDragstart($event)" repeat.for="card of game.hands.get(player2)"></card>
+			<card class="lost" model.bind="card" repeat.for="card of game.hands.get(player2)"></card>
 		</div>
 		<board game.bind="game"></board>
 		<div class="hand ${game.turn == player1 ? 'is-active' : ''}">
 			<card class="won" model.bind="card" draggable="true" dragstart.delegate="$parent.onCardDragstart($event)" repeat.for="card of game.hands.get(player1)"></card>
-		</div>
+		</div>		
+		<div class="player-name text-right">${player1}</div>
 	</section>
+
+	<button click.delegate="currentView = 'start'"></button>
 </template>
