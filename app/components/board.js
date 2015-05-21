@@ -36,12 +36,12 @@ export class BoardCustomElement {
 		var [target, game, player, card, position] = this.getPlay(event),
 			canPlay = game.canPlay(player, card, position);
 		if (canPlay) {
-			target.style.background = successColor;
+			target.classList.add('success');
 		}
 	}
 	onDragleave(event) {
 		var target = event.currentTarget;
-		target.style.background = '';
+		target.classList.remove('success');
 	}
 	onDrop(event) {
 		var [target, game, player, card, position] = this.getPlay(event);
@@ -54,7 +54,7 @@ export class BoardCustomElement {
 		}
 
 		// otherwise reset the ui
-		target.style.background = '';
+		target.classList.remove('success');
 
 		window.cardInPlay = null;
 	}
