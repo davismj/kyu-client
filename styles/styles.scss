@@ -50,6 +50,7 @@ body {
 
 board {
   table {
+    position: relative;
     margin: 8px auto;
     border-spacing: 0;
     background: $secondary-background;
@@ -68,16 +69,22 @@ board {
       background: $success-background;
     }
   }
-  .logo {
-    position: absolute;
-    top: 50%;
-    margin-top: -62px;
-    left: 50%;
-    margin-left: -67px;
-    opacity: 0.25;
-    transform: rotate(-15deg);
-    pointer-events: none;
-  }
+}
+board > table:before {
+  content: "kyu";
+  font-family: 'Oregano', cursive;
+  font-weight: normal;
+  font-size: 6em;
+  opacity: 0.25;
+  transform: rotate(-15deg);
+  
+  position: absolute;
+  top: 50%;
+  margin-top: -62px;
+  left: 50%;
+  margin-left: -64px;
+
+  pointer-events: none;
 }
 
 .title, .logo {
