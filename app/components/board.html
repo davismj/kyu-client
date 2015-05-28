@@ -1,8 +1,7 @@
 <template>
 	<require from="./card"></require>
-  <div class="logo">Kyu</div>
 	<table><tr repeat.for="row of game.board.height">
-		<td repeat.for="col of $parent.game.board.width" data-pos="${col + 3 * $parent.row}" dragover.delegate="$parent.$parent.onDragover($event)" dragleave.delegate="$parent.$parent.onDragleave($event)" drop.delegate="$parent.$parent.onDrop($event)">
+		<td repeat.for="col of $parent.game.board.width" data-pos="${col + 3 * $parent.row}" mouseenter.delegate="$parent.$parent.onMouseenter($event)" mouseleave.delegate="$parent.$parent.onMouseleave($event)" mouseup.delegate="$parent.$parent.onMouseup($event)">
 			<template if.bind="$parent.$parent.game.board[col + 3 * $parent.row]">
 				<card model.bind="$parent.$parent.game.board[col + 3 * $parent.row]" class.bind="$parent.$parent.game.board[col + 3 * $parent.row].owner == $parent.$parent.player1 ? 'won' : 'lost'"><card>
 			</template>

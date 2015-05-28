@@ -18,19 +18,37 @@ export class App {
         game.add(p2, p2.chooseHand());
         game.start();
 
-        this.game = game;
+        this.game = game;        
+        this.cardInPlay = null;
         this.currentView = 'game';
     }
 
-    onCardDragstart(event) {
+    onMousedown(event) {
         var player = this.game.turn,
             card = this.game.hands.get(player)
                 .find(c => c.id == event.target.id);
         if (card) {
-
-            // TODO fix
-            window.cardInPlay = card;
-            return true;
+            this.cardInPlay = card;
+            var onmousemove = e => {
+                if (e.movementX || e.movementY) {
+                    event.target.style.pointerEvents = 'none';
+                    event.target.style.opacity = 0.9;
+                    event.target.style.position = 'fixed';
+                }
+                event.target.style.left = e.pageX-40 + 'px';
+                event.target.style.top = e.pageY-50 + 'px';
+            };
+            var onmouseup = e => {
+                event.target.style.left = 0;
+                event.target.style.top = 0;
+                event.target.style.position = 'relative';
+                event.target.style.opacity = 1.0;
+                event.target.style.pointerEvents = 'initial';
+                document.removeEventListener('mousemove', onmousemove);
+                this.cardInPlay = null;
+            };
+            document.addEventListener('mousemove', onmousemove);
+            document.addEventListener('mouseup', onmouseup);
         }
     }
 }
