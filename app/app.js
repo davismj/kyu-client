@@ -29,7 +29,7 @@ export class App {
                 .find(c => c.id == event.target.id);
         if (card) {
             this.cardInPlay = card;
-            var onmousemove = e => {
+            var onMousemove = e => {
                 if (e.movementX || e.movementY) {
                     event.target.style.pointerEvents = 'none';
                     event.target.style.opacity = 0.9;
@@ -38,17 +38,19 @@ export class App {
                 event.target.style.left = e.pageX-40 + 'px';
                 event.target.style.top = e.pageY-50 + 'px';
             };
-            var onmouseup = e => {
+            var onMouseup = e => {
                 event.target.style.left = 0;
                 event.target.style.top = 0;
                 event.target.style.position = 'relative';
                 event.target.style.opacity = 1.0;
                 event.target.style.pointerEvents = 'initial';
-                document.removeEventListener('mousemove', onmousemove);
+                document.removeEventListener('mousemove', onMousemove);
                 this.cardInPlay = null;
             };
-            document.addEventListener('mousemove', onmousemove);
-            document.addEventListener('mouseup', onmouseup);
+            document.addEventListener('mousemove', onMousemove);
+            document.addEventListener('touchmove', onMousemove)
+            document.addEventListener('mouseup', onMouseup);
+            document.addEventListener('touchend', onMouseup);
         }
     }
 }
