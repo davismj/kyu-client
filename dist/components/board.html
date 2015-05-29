@@ -1,10 +1,7 @@
 <template>
 	<require from="./card"></require>
 	<table><tr repeat.for="row of game.board.height">
-		<td repeat.for="col of $parent.game.board.width" data-pos="${col + 3 * $parent.row}" 
-      mouseenter.delegate="$parent.$parent.onMouseenter($event)"
-      mouseleave.delegate="$parent.$parent.onMouseleave($event)" 
-      mouseup.delegate="$parent.$parent.onMouseup($event)">
+		<td repeat.for="col of $parent.game.board.width" data-pos="${col + 3 * $parent.row}" >
 			<template if.bind="$parent.$parent.game.board[col + 3 * $parent.row]">
 				<card model.bind="$parent.$parent.game.board[col + 3 * $parent.row]" class.bind="$parent.$parent.game.board[col + 3 * $parent.row].owner == $parent.$parent.player1 ? 'won' : 'lost'"><card>
 			</template>

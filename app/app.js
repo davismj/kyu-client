@@ -18,39 +18,82 @@ export class App {
         game.add(p2, p2.chooseHand());
         game.start();
 
-        this.game = game;        
-        this.cardInPlay = null;
+        this.game = game;
         this.currentView = 'game';
     }
 
+    getPlay(space) {
+    }
+
     onMousedown(event) {
+
         var player = this.game.turn,
-            card = this.game.hands.get(player)
-                .find(c => c.id == event.target.id);
+            element = event.target,
+            card = this.game.hands.get(player).find(c => c.id == element.id);
+
         if (card) {
-            this.cardInPlay = card;
-            var onMousemove = e => {
-                if (e.movementX || e.movementY) {
-                    event.target.style.pointerEvents = 'none';
-                    event.target.style.opacity = 0.9;
-                    event.target.style.position = 'fixed';
+            var onMousemove = event => {
+                element.style.pointerEvents = 'none';
+                element.style.opacity = 0.9;
+                element.style.position = 'fixed';
+                element.style.left = event.pageX-40 + 'px';
+                element.style.top = event.pageY-50 + 'px';
+
+                var space = document
+                    .elementFromPoint(event.pageX, event.pageY)
+                    .closest('td');
+                if (space) { 
+                    space.classList.add('success');
                 }
-                event.target.style.left = e.pageX-40 + 'px';
-                event.target.style.top = e.pageY-50 + 'px';
+                var spaces = document.querySelectorAll('td.success');
+                Array.prototype.forEach.call(spaces, function(el, i){
+                    if (el != space) {
+                        el.classList.remove('success');    
+                    }
+                });
             };
-            var onMouseup = e => {
-                event.target.style.left = 0;
-                event.target.style.top = 0;
-                event.target.style.position = 'relative';
-                event.target.style.opacity = 1.0;
-                event.target.style.pointerEvents = 'initial';
+            var onTouchmove = event => { 
+                onMousemove(event.touches[0]);
+                event.preventDefault();
+            };
+            var onMouseup = event => {
+                var space = document.querySelector('.success');
+                if (space) {
+                    var position = parseInt(space.getAttribute('data-pos'));
+                    
+                    // if the current player can play the card at the position
+                    if (this.game.canPlay(player, card, position)) {
+
+                        // then play the card at the position
+                        this.game.play(player, card, position);
+                    }
+
+                    // otherwise reset the ui
+                    space.classList.remove('success');
+                }
+
+                element.style.left = 0;
+                element.style.top = 0;
+                element.style.position = 'relative';
+                element.style.opacity = 1.0;
+                element.style.pointerEvents = 'initial';
                 document.removeEventListener('mousemove', onMousemove);
-                this.cardInPlay = null;
+                document.removeEventListener('touchmove', onTouchmove);
+                document.removeEventListener('mouseup', onMouseup);
+                document.removeEventListener('touchend', onTouchend);
+            };
+            var onTouchend = event => {
+                onMouseup(event.touches[0]);
+                event.preventDefault();
             };
             document.addEventListener('mousemove', onMousemove);
-            document.addEventListener('touchmove', onMousemove)
+            document.addEventListener('touchmove', onTouchmove);
             document.addEventListener('mouseup', onMouseup);
-            document.addEventListener('touchend', onMouseup);
+            document.addEventListener('touchend', onTouchend);
         }
+    }
+    onTouchstart(event) {
+        this.onMousedown(event.touches[0]);
+        return true;
     }
 }

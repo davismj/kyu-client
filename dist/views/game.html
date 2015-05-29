@@ -19,7 +19,7 @@
 		<div class="hand ${game.turn == player1 ? 'is-active' : ''}">
 			<card class="won" model.bind="card" repeat.for="card of game.hands.get(player1)"
 				mousedown.delegate="$parent.onMousedown($event)"
-				touchstart.delegate="$parent.onMousedown($event)"></card>
+				touchstart.delegate="$parent.onTouchstart($event)"></card>
 		</div>		
 		<div class="player-name text-right">${player1}</div>
 	</section>
