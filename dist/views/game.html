@@ -17,10 +17,8 @@
 		</div>
 		<board game.bind="game"></board>
 		<div class="hand ${game.turn == player1 ? 'is-active' : ''}">
-			<card class="won" model.bind="card" draggable="true" dragstart.delegate="$parent.onCardDragstart($event)" repeat.for="card of game.hands.get(player1)"></card>
+			<card class="won" model.bind="card" mousedown.delegate="$parent.onMousedown($event)" repeat.for="card of game.hands.get(player1)"></card>
 		</div>		
 		<div class="player-name text-right">${player1}</div>
 	</section>
-
-	<button click.delegate="currentView = 'start'"></button>
 </template>
