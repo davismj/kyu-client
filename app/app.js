@@ -29,7 +29,6 @@ export class App {
 
         this.game = game;
         this.currentView = 'game';
-    }
 
     onMousedown(event) {
 
