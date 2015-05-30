@@ -13,6 +13,10 @@ $lost-background: #D8A194;
 
 * {
   box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 button {
@@ -33,10 +37,8 @@ body {
   }
 
   main {
-    height: 600px; 
-    max-height: 100%;
-    width: 600px;
-    max-width: 100%;
+    max-height: 600px; 
+    max-width: 600px;
     margin: auto;
 
     h1, img:first-of-type {
@@ -73,7 +75,7 @@ board {
   }
 }
 board > table:before {
-  content: "kyu";
+  content: "Kyu";
   font-family: 'Oregano', cursive;
   font-weight: normal;
   font-size: 6em;
@@ -101,19 +103,27 @@ board > table:before {
   font-weight: bold;
 }
 
+.player-name.text-left.is-active:after {
+  content: "\25C0";
+  margin-left: -6px;
+  line-height: 1em;
+  font-size: 0.8em;
+  vertical-align: middle;
+  color: $success-text;
+}
+.player-name.text-right.is-active:before {
+  content: "\25B6";
+  margin-right: -6px;
+  line-height: 1em;
+  font-size: 0.8em;
+  vertical-align: middle;
+  color: $success-text;
+}
+
 .hand {
   width: 100%;
   text-align: center;
   margin: 8px;
-}
-
-.hand.is-active:before {
-  content: "\25B6";
-  margin-left: -50px;
-  line-height: 98px;
-  font-size: 4em;
-  vertical-align: top;
-  color: $success-text;
 }
 
 card {
@@ -131,25 +141,26 @@ card {
     width: 16px;
     text-align: center;
     line-height: 16px;
+    font-size: 1.2em;
   }
 
   .top { 
-    top: 0;
+    top: 2px;
     left: 50%;
     margin-left: -8px;
   }
   .right { 
-    right: 0;
+    right: 2px;
     top: 50%;
     margin-top: -8px;
   }
   .bottom { 
-    bottom: 0;
+    bottom: 2px;
     left: 50%;
     margin-left: -8px;
   }
   .left { 
-    left: 0;
+    left: 2px;
     top: 50%;
     margin-top: -8px;
   }
