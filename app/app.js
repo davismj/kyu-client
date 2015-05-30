@@ -1,6 +1,6 @@
 import { Game, Player, ComputerPlayer, Card } from 'kyu-core';
 
-Element.prototype.closest = //Element.prototype.closest ||
+Element.prototype.closest = Element.prototype.closest ||
     function closest(sel) {
         if (this.matches(sel))
             return this;
