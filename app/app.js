@@ -1,10 +1,19 @@
 import { Game, Player, ComputerPlayer, Card } from 'kyu-core';
 
+Element.prototype.closest = //Element.prototype.closest ||
+    function closest(sel) {
+        if (this.matches(sel))
+            return this;
+        if (this.parentElement) 
+            return this.parentElement.closest(sel);
+    }
+
 export class App {
     
     constructor() { 
         this.currentView = 'start'; 
         this.player1 = Player.new('Player 1');
+        document.addEventListener('touchmove', e => e.preventDefault());
     }
 
     newGame() {
@@ -22,9 +31,6 @@ export class App {
         this.currentView = 'game';
     }
 
-    getPlay(space) {
-    }
-
     onMousedown(event) {
 
         var player = this.game.turn,
@@ -33,6 +39,7 @@ export class App {
 
         if (card) {
             var onMousemove = event => {
+                try {
                 element.style.pointerEvents = 'none';
                 element.style.opacity = 0.9;
                 element.style.position = 'fixed';
@@ -51,6 +58,9 @@ export class App {
                         el.classList.remove('success');    
                     }
                 });
+                }catch (err) {
+                    alert(err);
+                }
             };
             var onTouchmove = event => { 
                 onMousemove(event.touches[0]);
