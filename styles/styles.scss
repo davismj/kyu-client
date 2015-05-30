@@ -2,7 +2,7 @@ $default-text: #3F6372;
 $primary-background: #FFFAF9;
 $secondary-background: #E7F1DB;
 
-$success-text: #82A558;
+$success-text: #507625;
 $success-background: #82A558;
 
 $won-text: #F7F9F4;
@@ -105,25 +105,26 @@ board > table:before {
 
 .player-name.text-left.is-active:after {
   content: "\25C0";
-  margin-left: -6px;
+  margin-right: -6px;
   line-height: 1em;
-  font-size: 0.8em;
-  vertical-align: middle;
   color: $success-text;
 }
 .player-name.text-right.is-active:before {
   content: "\25B6";
   margin-right: -6px;
   line-height: 1em;
-  font-size: 0.8em;
-  vertical-align: middle;
   color: $success-text;
 }
 
 .hand {
   width: 100%;
+  min-height: 100px;
   text-align: center;
   margin: 8px;
+
+  card {
+    vertical-align: middle;
+  }
 }
 
 card {
@@ -132,7 +133,6 @@ card {
   height: 100px;
   width: 80px;
   border: 1px solid;
-  background: white;
   transition: background 0.5s linear;
   
   * {
