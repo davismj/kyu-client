@@ -1,5 +1,5 @@
 <template>
-	<require from="./card"></require>
+	<require from="components/card"></require>
 	<table><tr repeat.for="row of game.board.height">
 		<td repeat.for="col of $parent.game.board.width" data-pos="${col + 3 * $parent.row}">
 			<template if.bind="$parent.$parent.game.board[col + 3 * $parent.row]">

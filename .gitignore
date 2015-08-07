@@ -7,3 +7,6 @@ bower_components
 /app
 /build
 /jspm_packages
+/dist/components/card.js
+/dist/components/board.js
+/dist/app.js
