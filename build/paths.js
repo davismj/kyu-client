@@ -1,5 +1,4 @@
 var path = require('path');
-
 var appRoot = 'app/';
 
 module.exports = {
@@ -7,8 +6,5 @@ module.exports = {
   source: appRoot + '**/*.js',
   html: appRoot + '**/*.html',
   style: 'styles/**/*.scss',
-  output: 'dist/',
-  doc:'./doc',
-  e2eSpecsSrc: 'test/e2e/src/*.js',
-  e2eSpecsDist: 'test/e2e/dist/'
+  output: 'dist/'
 };
