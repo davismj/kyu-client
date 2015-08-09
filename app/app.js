@@ -1,10 +1,13 @@
 import { Game, Player, ComputerPlayer, Card } from 'kyu-core';
+import io from 'socket.io';
 
 export class App {
     
     constructor() { 
         this.currentView = 'start'; 
         this.player1 = Player.new('Player 1');
+        io.connect('http://localhost:8088');
+        document.addEventListener('touchmove', e => e.preventDefault());
     }
 
     newGame() {

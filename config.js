@@ -17,21 +17,23 @@ System.config({
 
 System.config({
   "map": {
-    "aurelia-binding": "github:aurelia/binding@0.6.1",
-    "aurelia-bootstrapper": "github:aurelia/bootstrapper@0.12.0",
-    "aurelia-dependency-injection": "github:aurelia/dependency-injection@0.7.1",
-    "aurelia-framework": "github:aurelia/framework@0.11.0",
-    "aurelia-http-client": "github:aurelia/http-client@0.8.1",
-    "aurelia-router": "github:aurelia/router@0.8.1",
-    "babel": "npm:babel-core@5.4.7",
-    "babel-runtime": "npm:babel-runtime@5.4.7",
-    "core-js": "github:zloirock/core-js@0.9.2",
-    "kyu-core": "../lib/kyu-core/main",
-    "github:aurelia/binding@0.6.1": {
-      "aurelia-dependency-injection": "github:aurelia/dependency-injection@0.7.1",
-      "aurelia-metadata": "github:aurelia/metadata@0.5.0",
-      "aurelia-task-queue": "github:aurelia/task-queue@0.4.0",
-      "core-js": "npm:core-js@0.9.13"
+    "aurelia-binding": "github:aurelia/binding@0.8.5",
+    "aurelia-bootstrapper": "github:aurelia/bootstrapper@0.15.0",
+    "aurelia-framework": "github:aurelia/framework@0.14.0",
+    "aurelia-http-client": "github:aurelia/http-client@0.10.2",
+    "aurelia-loader-default": "github:aurelia/loader-default@0.9.3",
+    "aurelia-templating-binding": "github:aurelia/templating-binding@0.13.2",
+    "aurelia-templating-resources": "github:aurelia/templating-resources@0.13.4",
+    "babel": "npm:babel-core@5.8.21",
+    "babel-runtime": "npm:babel-runtime@5.8.20",
+    "core-js": "github:zloirock/core-js@0.9.18",
+    "kyu-core": "github:kyu-core@0.1.0",
+    "socket.io": "github:socketio/socket.io@1.3.6",
+    "github:aurelia/binding@0.8.5": {
+      "aurelia-dependency-injection": "github:aurelia/dependency-injection@0.9.1",
+      "aurelia-metadata": "github:aurelia/metadata@0.7.2",
+      "aurelia-task-queue": "github:aurelia/task-queue@0.6.1",
+      "core-js": "npm:core-js@0.9.18"
     },
     "github:aurelia/bootstrapper@0.12.0": {
       "aurelia-event-aggregator": "github:aurelia/event-aggregator@0.4.0",
