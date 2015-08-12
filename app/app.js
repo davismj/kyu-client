@@ -7,54 +7,80 @@ export class App {
     this.currentView = 'start'; 
     this.player1 = Player.new('Player 1');
     document.addEventListener('touchmove', e => e.preventDefault());
-
-    this.socket = io.connect(config.socketServer);
-    this.socket.on('game:created', function(gameId) {
-      console.log('game created');
-      // throw up a modal that has a copyable link that another user can use
-      prompt(
-        'Please copy this link. Please?',
-        'http://localhost:9000?game=' + gameId
-      )
-    });
-    this.socket.on('game:joined',  function(game) { 
-      console.log('joined game');
-    });
-    this.socket.on('player:joined',  function(player) { 
-      console.log(player, 'joined game');
-    });
-    this.socket.on('game:started', function(game) {
-      console.log('game', game, 'started');
-    });
   }
 
   activate() {
     // pull the query string
     var match = location.search.match(/game=([a-zA-Z0-9]+)/);
     if (match) {
-      // join the game 
+      this.socket = io.connect(config.socketServer);
       this.socket.emit('game:join', match[1]);
+      this.socket.on('game:start', (game) => {
+        this.currentView = 'game';
+        console.log('game', game, 'started');
+        this.game = Game.new();
+        this.player2 = Player.new();
+        // player 1
+        game.hands[1][1].forEach(c => this.player1.cards.push(new Card(c)));
+        // player 2
+        game.hands[0][1].forEach(c => this.player2.cards.push(new Card(c)));
+        this.game.add(this.player1, this.player1.cards);
+        this.game.add(this.player2, this.player2.cards);
+        this.game.start();
+      });
     }
   }
 
-  newGame(mode) {
+  // TODO make this a service
+  goOnline() {
+    this.socket = io.connect(config.socketServer);
+    this.socket.on('game:created', (gameId) => {
+      console.log('game created');
+      prompt(
+        'Please copy this link. Please?',
+        'http://localhost:9000?game=' + gameId
+      )
+    });
 
-    if (mode == 'arcade') {
-      var game = Game.new(),
-        p1 = this.player1,
-        p2 = this.player2 = ComputerPlayer.new();
-      for (let i = 0; i < 5; i++) {
-        p1.cards.push(Card.random());
+    // navigate to a new, empty game
+    this.socket.on('player:joined', (hand) => {
+      console.log(hand, 'joined game');
+      
+      // TODO this logic is invalid
+      if (!this.game) {
+        this.game = Game.new();
+        hand.forEach(c => this.player1.cards.push(new Card(c)));
+        this.game.add(this.player1, this.player1.cards);
+
+      } else {
+        this.player2 = Player.new();
+        hand.forEach(c => this.player2.cards.push(new Card(c)));
+        this.game.add(this.player2, this.player2.cards);
       }
-      game.add(p1, p1.cards.slice());
-      game.add(p2, p2.chooseHand());
-      game.start();
 
-      this.game = game;
       this.currentView = 'game';
-    } else if (mode == 'online') {
-      this.socket.emit('game:create');
+
+    });
+    this.socket.on('game:start', (game) => {
+      console.log('game', game, 'started');
+      this.game.start();
+    });
+    this.socket.emit('game:create');
+  }
+
+  newGame() {
+    var game = Game.new(),
+      p1 = this.player1,
+      p2 = this.player2 = ComputerPlayer.new();
+    for (let i = 0; i < 5; i++) {
+      p1.cards.push(Card.random());
     }
+    game.add(p1, p1.cards);
+    game.add(p2, p2.chooseHand());
+    game.start();
+
+    this.game = game;
+    this.currentView = 'game';
   }
 
   onMousedown(event) {
