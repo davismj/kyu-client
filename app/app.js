@@ -2,85 +2,119 @@ import { Game, Player, ComputerPlayer, Card } from 'kyu-core';
 import config from 'config';
 
 export class App {
+
+  currentView;
+  game;
+  player1;
+  player2;
   
   constructor() { 
     this.currentView = 'start'; 
-    this.player1 = Player.new('Player 1');
-    document.addEventListener('touchmove', e => e.preventDefault());
+
+    // create player and game
+    this.game = Game.new();
+    this.player1 = Player.new({ name: 'Player 1' });
   }
 
   activate() {
+    
     // pull the query string
     var match = location.search.match(/game=([a-zA-Z0-9]+)/);
     if (match) {
+      this.goOnline();
+      this.socket.emit('joinGame', match[1]);
+    }
+
+    document.addEventListener('touchmove', e => e.preventDefault()); // TODO fix
+  }
+
+  goOnline() {
+    if (!this.socket) {
       this.socket = io.connect(config.socketServer);
-      this.socket.emit('game:join', match[1]);
-      this.socket.on('game:start', (game) => {
+
+      this.socket.on('gameCreated', (game) => {
+        console.log('gameCreated', game);
+        game = new Game(game);
+        this.game.id = game.id;
+        this.player1.id = game.players[0].id;
+        this.game.addPlayer(this.player1);
         this.currentView = 'game';
-        console.log('game', game, 'started');
-        this.game = Game.new();
-        this.player2 = Player.new();
-        // player 1
-        game.hands[1][1].forEach(c => this.player1.cards.push(new Card(c)));
-        // player 2
-        game.hands[0][1].forEach(c => this.player2.cards.push(new Card(c)));
-        this.game.add(this.player1, this.player1.cards);
-        this.game.add(this.player2, this.player2.cards);
-        this.game.start();
+
+        prompt(
+          'Please copy this link. Please?',
+          'http://localhost:9000?game=' + game.id
+        );
+      });
+
+      this.socket.on('gameJoined', (game) => { 
+        console.log('gameJoined', game);
+        game = new Game(game);
+        this.game.id = game.id;
+        this.player1.id = game.players[1].id;
+        this.player2 = new Player(game.players[0]);
+        this.game.addPlayer(this.player1);
+        this.game.addPlayer(this.player2);
+        this.currentView = 'game';
+      });
+
+      this.socket.on('playerJoined', (player) => {
+        console.log('playerJoined', player);
+        this.player2 = new Player(player);
+        this.game.addPlayer(this.player2);
+      });
+
+      this.socket.on('gameStarted', (game) => {
+        console.log('gameStarted', game);
+        game = new Game(game);
+        for (let hand of game.hands) {
+          if (hand[0].id == this.player1.id) { 
+            this.game.useHand(this.player1, hand[1]);
+          } else {
+            this.game.useHand(this.player2, hand[1]);
+          }
+        }
+        let turn = Array.from(this.game.players).find(p => p.id == game.turn.id);
+        this.game.start(turn);
+      });
+
+      this.socket.on('playMade', (playerId, cardId, location) => {
+        let player = this.game.getPlayer(playerId);
+        let card = this.game.hands.get(player).find(c => c.id == cardId);
+        console.log('playMade', player, card, location)
+        this.game.play(player, card, location);
       });
     }
   }
 
-  // TODO make this a service
-  goOnline() {
-    this.socket = io.connect(config.socketServer);
-    this.socket.on('game:created', (gameId) => {
-      console.log('game created');
-      prompt(
-        'Please copy this link. Please?',
-        'http://localhost:9000?game=' + gameId
-      )
-    });
+  newGame(mode) {
 
-    // navigate to a new, empty game
-    this.socket.on('player:joined', (hand) => {
-      console.log(hand, 'joined game');
-      
-      // TODO this logic is invalid
-      if (!this.game) {
-        this.game = Game.new();
-        hand.forEach(c => this.player1.cards.push(new Card(c)));
-        this.game.add(this.player1, this.player1.cards);
+    // play online
+    if (mode == 'online') {
+      this.goOnline();
+      this.socket.emit('createGame');
 
-      } else {
-        this.player2 = Player.new();
-        hand.forEach(c => this.player2.cards.push(new Card(c)));
-        this.game.add(this.player2, this.player2.cards);
+    // quickplay
+    } else { 
+      var game = this.game,
+        p1 = this.player1,
+        p2 = this.player2 = ComputerPlayer.new();
+      for (let i = 0; i < 5; i++) {
+        p1.cards.push(Card.random());
       }
+      game.add(p1, p1.cards);
+      game.add(p2, p2.chooseHand());
+      game.start();
 
+      this.game = game;
       this.currentView = 'game';
-
-    });
-    this.socket.on('game:start', (game) => {
-      console.log('game', game, 'started');
-      this.game.start();
-    });
-    this.socket.emit('game:create');
+    }
   }
 
-  newGame() {
-    var game = Game.new(),
-      p1 = this.player1,
-      p2 = this.player2 = ComputerPlayer.new();
-    for (let i = 0; i < 5; i++) {
-      p1.cards.push(Card.random());
-    }
-    game.add(p1, p1.cards);
-    game.add(p2, p2.chooseHand());
-    game.start();
-
-    this.game = game;
-    this.currentView = 'game';
+  get player1sHand() {
+    return this.game.hands.get(this.player1);
+  }
+  get player2sHand() {
+    return this.game.hands.get(this.player2);
   }
 
   onMousedown(event) {
@@ -124,6 +158,11 @@ export class App {
 
             // then play the card at the position
             this.game.play(player, card, position);
+
+            if (this.socket) { 
+              this.socket.emit('makePlay', this.game.id, player.id, card.id, position);
+              console.log('makePlay', this.game.id, player.id, card.id, position);
+            }
           }
 
           // otherwise reset the ui
