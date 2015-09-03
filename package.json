@@ -32,7 +32,7 @@
       "aurelia-loader-default": "github:aurelia/loader-default@0",
       "aurelia-templating-binding": "github:aurelia/templating-binding@0",
       "aurelia-templating-resources": "github:aurelia/templating-resources@0",
-      "core-js": "npm:core-js@^1.0.0",
+      "core-js": "github:zloirock/core-js@1",
       "kyu-core": "npm:kyu-core@0.1.0"
     },
     "devDependencies": {
