@@ -32,12 +32,13 @@
       "aurelia-loader-default": "github:aurelia/loader-default@0",
       "aurelia-templating-binding": "github:aurelia/templating-binding@0",
       "aurelia-templating-resources": "github:aurelia/templating-resources@0",
-      "core-js": "github:zloirock/core-js@0"
+      "core-js": "npm:core-js@^1.0.0",
+      "kyu-core": "npm:kyu-core@0.1.0"
     },
     "devDependencies": {
-      "babel": "npm:babel-core@5",
-      "babel-runtime": "npm:babel-runtime@5",
-      "core-js": "github:zloirock/core-js@0"
+      "babel": "npm:babel-core@^5.8.21",
+      "babel-runtime": "npm:babel-runtime@^5.8.20",
+      "core-js": "github:zloirock/core-js@1"
     }
   }
 }
