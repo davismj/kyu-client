@@ -234,9 +234,9 @@ card + card {
   pointer-events: none;
 }
 
-.enter-top > div {
+.enter-top {
   transition: margin-top 0.4s ease;
 }
-.enter-top:not(.show) > div {
+.enter-top:not(.show) {
   margin-top: -50%;
 }

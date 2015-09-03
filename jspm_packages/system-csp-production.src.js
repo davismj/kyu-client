@@ -1,5 +1,5 @@
 /*
- * SystemJS v0.18.8
+ * SystemJS v0.18.17
  */
 (function() {
 function bootstrap() {(function(__global) {
@@ -987,7 +987,7 @@ function applyPaths(paths, name) {
   }
 
   var outPath = paths[pathMatch] || name;
-  if (wildcard)
+  if (typeof wildcard == 'string')
     outPath = outPath.replace('*', wildcard);
 
   return outPath;
@@ -1041,6 +1041,40 @@ function group(deps) {
     }
   }
   return { names: names, indices: indices };
+}
+
+var getOwnPropertyDescriptor = true;
+try {
+  Object.getOwnPropertyDescriptor({ a: 0 }, 'a');
+}
+catch(e) {
+  getOwnPropertyDescriptor = false;
+}
+
+// converts any module.exports object into an object ready for System.newModule
+function getESModule(exports) {
+  var esModule = {};
+  // don't trigger getters/setters in environments that support them
+  if (typeof exports == 'object' || typeof exports == 'function') {
+    if (getOwnPropertyDescriptor) {
+      var d;
+      for (var p in exports)
+        if (d = Object.getOwnPropertyDescriptor(exports, p))
+          defineProperty(esModule, p, d);
+    }
+    else {
+      var hasOwnProperty = exports && exports.hasOwnProperty;
+      for (var p in exports) {
+        if (!hasOwnProperty || exports.hasOwnProperty(p))
+          esModule[p] = exports[p];
+      }
+    }
+  }
+  esModule['default'] = exports;
+  defineProperty(esModule, '__useDefault', {
+    value: true
+  });
+  return esModule;
 }
 
 function extend(a, b, prepend) {
@@ -1188,6 +1222,7 @@ hook('import', function(systemImport) {
   For easy normalization canonicalization with latest URL support.
 
 */
+var packageProperties = ['main', 'format', 'defaultExtension', 'meta', 'map', 'basePath'];
 SystemJSLoader.prototype.config = function(cfg) {
 
   // always configure baseURL first
@@ -1208,6 +1243,9 @@ SystemJSLoader.prototype.config = function(cfg) {
 
   if (cfg.defaultJSExtensions)
     this.defaultJSExtensions = cfg.defaultJSExtensions;
+
+  if (cfg.pluginFirst)
+    this.pluginFirst = cfg.pluginFirst;
 
   if (cfg.paths) {
     for (var p in cfg.paths)
@@ -1246,9 +1284,24 @@ SystemJSLoader.prototype.config = function(cfg) {
     }
   }
 
+  if (cfg.packagePaths) {
+    for (var i = 0; i < cfg.packagePaths.length; i++) {
+      var path = cfg.packagePaths[i];
+      var normalized = this.normalizeSync(path);
+      if (this.defaultJSExtensions && path.substr(path.length - 3, 3) != '.js')
+        normalized = normalized.substr(0, normalized.length - 3);
+      cfg.packagePaths[i] = normalized;
+    }
+  }
+
   if (cfg.packages) {
     for (var p in cfg.packages) {
-      var prop = this.normalizeSync(p);
+      if (p.match(/^([^\/]+:)?\/\/$/))
+        throw new TypeError('"' + p + '" is not a valid package name.');
+
+      // request with trailing "/" to get package name exactly
+      var prop = this.normalizeSync(p + (p[p.length - 1] != '/' ? '/' : ''));
+      prop = prop.substr(0, prop.length - 1);
 
       // if doing default js extensions, undo to get package name
       if (this.defaultJSExtensions && p.substr(p.length - 3, 3) != '.js')
@@ -1256,7 +1309,10 @@ SystemJSLoader.prototype.config = function(cfg) {
 
       this.packages[prop]= this.packages[prop] || {};
       for (var q in cfg.packages[p])
-        this.packages[prop][q] = cfg.packages[p][q];
+        if (indexOf.call(packageProperties, q) == -1 && typeof console != 'undefined' && console.warn)
+          console.warn('"' + q + '" is not a valid package configuration option in package ' + p);
+
+      extendMeta(this.packages[prop], cfg.packages[p]);
     }
   }
 
@@ -1316,6 +1372,9 @@ SystemJSLoader.prototype.config = function(cfg) {
 
   function webWorkerImport(loader, load) {
     return new Promise(function(resolve, reject) {
+      if (load.metadata.integrity)
+        reject(new Error('Subresource integrity checking is not supported in web workers.'));
+
       try {
         importScripts(load.address);
       }
@@ -1380,6 +1439,10 @@ SystemJSLoader.prototype.config = function(cfg) {
         curSystem = __global.System;
         __global.System = loader;
         s.src = load.address;
+
+        if (load.metadata.integrity)
+          s.setAttribute('integrity', load.metadata.integrity);
+
         head.appendChild(s);
 
         function cleanup() {
@@ -1447,14 +1510,6 @@ hook('onScriptLoad', function(onScriptLoad) {
  *
  */
 (function() {
-
-  var getOwnPropertyDescriptor = true;
-  try {
-    Object.getOwnPropertyDescriptor({ a: 0 }, 'a');
-  }
-  catch(e) {
-    getOwnPropertyDescriptor = false;
-  }
 
   /*
    * There are two variations of System.register:
@@ -1545,6 +1600,7 @@ hook('onScriptLoad', function(onScriptLoad) {
    *
    *    For dynamic we track the es module with:
    *    - esModule actual es module value
+   *    - esmExports whether to extend the esModule with named exports
    *      
    *    Then for declarative only we track dynamic bindings with the 'module' records:
    *      - name
@@ -1817,33 +1873,15 @@ hook('onScriptLoad', function(onScriptLoad) {
     // create the esModule object, which allows ES6 named imports of dynamics
     exports = module.exports;
 
-    if (exports && exports.__esModule) {
+    // __esModule flag treats as already-named
+    if (exports && exports.__esModule)
       entry.esModule = exports;
-    }
-    else {
-      entry.esModule = {};
-
-      // don't trigger getters/setters in environments that support them
-      if (typeof exports == 'object' || typeof exports == 'function') {
-        if (getOwnPropertyDescriptor) {
-          var d;
-          for (var p in exports)
-            if (d = Object.getOwnPropertyDescriptor(exports, p))
-              defineProperty(entry.esModule, p, d);
-        }
-        else {
-          var hasOwnProperty = exports && exports.hasOwnProperty;
-          for (var p in exports) {
-            if (!hasOwnProperty || exports.hasOwnProperty(p))
-              entry.esModule[p] = exports[p];
-          }
-        }
-      }
-      entry.esModule['default'] = exports;
-      defineProperty(entry.esModule, '__useDefault', {
-        value: true
-      });
-    }
+    // set module as 'default' export, then fake named exports by iterating properties
+    else if (entry.esmExports)
+      entry.esModule = getESModule(exports);
+    // just use the 'default' export
+    else
+      entry.esModule = { 'default': exports };
   }
 
   /*
@@ -1925,7 +1963,7 @@ hook('onScriptLoad', function(onScriptLoad) {
         load.metadata.deps = load.metadata.deps || [];
 
         // run detection for register format
-        if (load.metadata.format == 'register' || !load.metadata.format && load.source.match(registerRegEx))
+        if (load.metadata.format == 'register' || load.metadata.bundle || !load.metadata.format && load.source.match(registerRegEx))
           load.metadata.format = 'register';
         return source;
       });
@@ -1963,7 +2001,8 @@ hook('onScriptLoad', function(onScriptLoad) {
         anonRegister = null;
         calledRegister = false;
 
-        __exec.call(loader, load);
+        if (typeof __exec != 'undefined')
+          __exec.call(loader, load);
 
         if (!calledRegister && !load.metadata.registered)
           throw new TypeError(load.name + ' detected as System.register but didn\'t execute.');
@@ -1998,6 +2037,7 @@ hook('onScriptLoad', function(onScriptLoad) {
       entry.deps = grouped.names;
       entry.originalIndices = grouped.indices;
       entry.name = load.name;
+      entry.esmExports = load.metadata.esmExports !== false;
 
       // first, normalize all dependencies
       var normalizePromises = [];
@@ -2068,6 +2108,14 @@ hookConstructor(function(constructor) {
 
     loader.set('@@global-helpers', loader.newModule({
       prepareGlobal: function(moduleName, exportName, globals) {
+        // disable module detection
+        var curDefine = __global.define;
+        
+        __global.define = undefined;
+        __global.exports = undefined;
+        if (__global.module && __global.module.exports)
+          __global.module = undefined;
+
         // set globals
         var oldGlobals;
         if (globals) {
@@ -2122,6 +2170,7 @@ hookConstructor(function(constructor) {
             for (var g in oldGlobals)
               __global[g] = oldGlobals[g];
           }
+          __global.define = curDefine;
 
           return globalValue;
         };
@@ -2305,13 +2354,13 @@ hookConstructor(function(constructor) {
       }
       // named define
       else {
-        // if it has no dependencies and we don't have any other
-        // defines, then let this be an anonymous define
+        // if we don't have any other defines, 
+        // then let this be an anonymous define
         // this is just to support single modules of the form:
         // define('jquery')
         // still loading anonymously
         // because it is done widely enough to be useful
-        if (deps.length == 0 && !lastModule.anonDefine && !lastModule.isBundle) {
+        if (!lastModule.anonDefine && !lastModule.isBundle) {
           lastModule.anonDefine = define;
         }
         // otherwise its a bundle only
@@ -2427,6 +2476,10 @@ hook('normalize', function(normalize) {
     if (this.has(normalized))
       return normalized;
 
+    // percent encode just '#' in urls
+    if (isBrowser)
+      normalized = normalized.replace(/#/g, '%23');
+
     if (normalized.match(absURLRegEx)) {
       // defaultJSExtensions backwards compatibility
       if (this.defaultJSExtensions && normalized.substr(normalized.length - 3, 3) != '.js')
@@ -2455,6 +2508,7 @@ hook('normalize', function(normalize) {
  *
  * System.packages = {
  *   jquery: {
+ *     basePath: 'lib', // optionally only use a subdirectory within the package
  *     main: 'index.js', // when not set, package name is requested directly
  *     format: 'amd',
  *     defaultExtension: 'js',
@@ -2473,11 +2527,11 @@ hook('normalize', function(normalize) {
  *        './vendor/another.js': './another/index.js',
  *        // test.js / test -> lib/test.js
  *        './test.js': './lib/test.js',
- *     },
- *     env: {
- *       'browser': {
- *         main: 'browser.js'
- *       }
+ *
+ *        // environment-specific map configurations
+ *        './index.js': {
+ *          '~browser': './index-node.js'
+ *        }
  *     }
  *   }
  * };
@@ -2495,6 +2549,7 @@ hook('normalize', function(normalize) {
  * - defaultJSExtensions applies after map when defaultExtension is not set
  * - if a meta value is available for a module, map and defaultExtension are skipped
  * - like global map, package map also applies to subpaths (sizzle/x, ./vendor/another/sub)
+ * - condition module map is '@env' module in package or '@system-env' globally
  *
  * In addition, the following meta properties will be allowed to be package
  * -relative as well in the package meta config:
@@ -2502,6 +2557,30 @@ hook('normalize', function(normalize) {
  *   - loader
  *   - alias
  *
+ *
+ * Package Configuration Loading
+ * 
+ * Not all packages may already have their configuration present in the System config
+ * For these cases, a list of packagePaths can be provided, which when matched against
+ * a request, will first request a ".json" file by the package name to derive the package
+ * configuration from. This allows dynamic loading of non-predetermined code, a key use
+ * case in SystemJS.
+ *
+ * Example:
+ * 
+ *   System.packagePaths = ['packages/*'];
+ *
+ *   // will first request 'packages/new-package.json' for the package config
+ *   // before completing the package request to 'packages/new-package/path'
+ *   System.import('packages/new-package/path');
+ *
+ * When a package matches packagePaths, it will always send a config request for
+ * the package configuration.
+ * Any existing package configurations for the package will deeply merge with the 
+ * package config, with the existing package configurations taking preference.
+ * To opt-out of the package configuration request for a package that matches
+ * packagePaths, use the { loadConfig: false } package config option.
+ * 
  */
 (function() {
 
@@ -2509,51 +2588,23 @@ hook('normalize', function(normalize) {
     return function() {
       constructor.call(this);
       this.packages = {};
+      this.packagePaths = {};
     };
   });
 
   function getPackage(name) {
+    // use most specific package
+    var curPkg, curPkgLen = 0, pkgLen;
     for (var p in this.packages) {
-      if (name.substr(0, p.length) === p && (name.length === p.length || name[p.length] === '/'))
-        return p;
-    }
-  }
-
-  function getPackageConfig(loader, pkgName) {
-    var pkgConfig = loader.packages[pkgName];
-
-    if (!pkgConfig.env)
-      return Promise.resolve(pkgConfig);
-
-    // check environment conditions
-    // default environment condition is '@env' in package or '@system-env' globally
-    return loader['import'](pkgConfig.map['@env'] || '@system-env', pkgName)
-    .then(function(env) {
-      // derived config object
-      var pkg = {};
-      for (var p in pkgConfig)
-        if (p !== 'map' & p !== 'env')
-          pkg[p] = pkgConfig[p];
-
-      pkg.map = {};
-      for (var p in pkgConfig.map)
-        pkg.map[p] = pkgConfig.map[p];
-
-      for (var e in pkgConfig.env) {
-        if (env[e]) {
-          var envConfig = pkgConfig.env[e];
-          if (envConfig.main)
-            pkg.main = envConfig.main;
-          for (var m in envConfig.map)
-            pkg.map[m] = envConfig.map[m];
+      if (name.substr(0, p.length) === p && (name.length === p.length || name[p.length] === '/')) {
+        pkgLen = p.split('/').length;
+        if (pkgLen > curPkgLen) {
+          curPkg = p;
+          curPkgLen = pkgLen;
         }
       }
-
-      // store the derived environment config so we have this cached for next time
-      loader.packages[pkgName] = pkg;
-
-      return pkg;
-    });
+    }
+    return curPkg;
   }
 
   function applyMap(map, name) {
@@ -2568,13 +2619,117 @@ hook('normalize', function(normalize) {
         bestMatchLength = curMatchLength;
       }
     }
-    if (bestMatch)
-      return map[bestMatch] + name.substr(bestMatch.length);
+
+    return bestMatch;
   }
 
-  SystemJSLoader.prototype.normalizeSync = SystemJSLoader.prototype.normalize;
+  function envMap(loader, pkgName, pkgMap, name) {
+    var map = applyMap(pkgMap, name);
+    var mapped = pkgMap[map];
 
-  hook('normalize', function(normalize) {
+    // conditional package map
+    if (mapped) {
+      if (typeof mapped == 'object') {
+        return loader['import'](pkgMap['@env'] || '@system-env', pkgName)
+        .then(function(env) {
+          // first map condition to match is used
+          for (var e in mapped) {
+            var negate = e[0] == '~';
+
+            var value = readMemberExpression(negate ? e.substr(1) : e, env);
+
+            if (!negate && value || negate && !value)
+              return mapped[e] + name.substr(map.length);
+          }
+        });
+      }
+      // normal map
+      else {
+        return mapped + name.substr(map.length);
+      }
+    }
+  }
+
+  function getBasePath(pkg) {
+    // sanitize basePath
+    var basePath = pkg.basePath && pkg.basePath != '.' ? pkg.basePath : '';
+    if (basePath) {
+      if (basePath.substr(0, 2) == './')
+        basePath = basePath.substr(2);
+      if (basePath[basePath.length - 1] != '/')
+        basePath += '/';
+    }
+    return basePath;
+  }
+
+  function applyPackageConfig(normalized, pkgName, sync, defaultJSExtension) {
+    var loader = this;
+    var pkg = loader.packages[pkgName];
+
+    var basePath = getBasePath(pkg);
+
+    // main
+    if (pkgName === normalized && pkg.main)
+      normalized += '/' + (pkg.main.substr(0, 2) == './' ? pkg.main.substr(2) : pkg.main);
+
+    // allow for direct package name normalization with trailling "/" (no main)
+    if (normalized.length == pkgName.length + 1 && normalized[pkgName.length] == '/')
+      return normalized + (defaultJSExtension && normalized.substr(normalized.length - 3, 3) != '.js' ? '.js' : '');
+
+    // defaultExtension & defaultJSExtension
+    // if we have meta for this package, don't do defaultExtensions
+    var defaultExtension = '';
+    if (!pkg.meta || !(pkg.meta[normalized.substr(pkgName.length + 1)] || pkg.meta['./' + normalized.substr(pkgName.length + 1)])) {
+      // apply defaultExtension
+      if ('defaultExtension' in pkg && pkgName !== normalized && normalized[normalized.length - 1] != '/') {
+        if (pkg.defaultExtension !== false && (normalized.split('/').pop().lastIndexOf('.') == -1))
+          defaultExtension = '.' + pkg.defaultExtension;
+      }
+      // apply defaultJSExtensions if defaultExtension not set
+      else if (defaultJSExtension) {
+        defaultExtension = '.js';
+      }
+    }
+
+    // no submap if name is package itself
+    if (normalized.length == pkgName.length)
+      return normalized + defaultExtension;
+
+    // sync normalize does not apply package map
+    if (sync || !pkg.map)
+      return pkgName + '/' + basePath + normalized.substr(pkgName.length + 1) + defaultExtension;
+
+    var subPath = '.' + normalized.substr(pkgName.length);
+
+    // apply submap checking without then with defaultExtension
+    return Promise.resolve(envMap(loader, pkgName, pkg.map, subPath))
+    .then(function(mapped) {
+      if (mapped)
+        return mapped;
+
+      if (defaultExtension)
+        return envMap(loader, pkgName, pkg.map, subPath + defaultExtension);
+    })
+    .then(function(mapped) {
+      if (mapped) {
+        // '.' as a target is the package itself (with package main check)
+        if (mapped == '.')
+          return loader.normalizeSync(pkgName);
+        // internal package map
+        else if (mapped.substr(0, 2) == './')
+          return pkgName + '/' + basePath + mapped.substr(2);
+        // global package map
+        else
+          return loader.normalize.call(loader, mapped); 
+      }
+      else
+        return pkgName + '/' + basePath + normalized.substr(pkgName.length + 1) + defaultExtension;
+    });
+  }
+
+  var packagePathsRegExps = {};
+  var pkgConfigPromises = {};
+  function createPackageNormalize(normalize, sync) {
     return function(name, parentName) {
       // apply contextual package map first
       if (parentName) {
@@ -2586,11 +2741,15 @@ hook('normalize', function(normalize) {
       if (parentPackage && name[0] !== '.') {
         var parentMap = this.packages[parentPackage].map;
         if (parentMap) {
-          name = applyMap(parentMap, name) || name;
+          var map = applyMap(parentMap, name);
 
-          // relative maps are package-relative
-          if (name[0] === '.')
-            parentName = parentPackage + '/';
+          if (map) {
+            name = parentMap[map] + name.substr(map.length);
+
+            // relative maps are package-relative
+            if (name[0] === '.')
+              parentName = parentPackage + '/';
+          }
         }
       }
 
@@ -2609,45 +2768,49 @@ hook('normalize', function(normalize) {
       var pkgName = getPackage.call(this, normalized);
 
       var loader = this;
-
-      if (pkgName) {
-        return getPackageConfig(this, pkgName)
-        .then(function(pkg) {
-          // main
-          if (pkgName === normalized && pkg.main)
-            normalized += '/' + (pkg.main.substr(0, 2) == './' ? pkg.main.substr(2) : pkg.main);
-
-          if (normalized.substr(pkgName.length) == '/')
-            return normalized;
-
-          // defaultExtension & defaultJSExtension
-          // if we have meta for this package, don't do defaultExtensions
-          var defaultExtension = '';
-          if (!pkg.meta || !pkg.meta[normalized.substr(pkgName.length + 1)]) {
-            // apply defaultExtension
-
-            if ('defaultExtension' in pkg) {
-              if (pkg.defaultExtension !== false && normalized.split('/').pop().lastIndexOf('.') == -1)
-                defaultExtension = '.' + pkg.defaultExtension;
-            }
-            // apply defaultJSExtensions if defaultExtension not set
-            else if (defaultJSExtension) {
-              defaultExtension = '.js';
-            }
+      
+      // check if we match a packagePaths
+      if (!sync) {
+        var pkgPath;
+        for (var i = 0; i < this.packagePaths.length; i++) {
+          var match = normalized.match(packagePathsRegExps[this.packagePaths[i]] || 
+              (packagePathsRegExps[this.packagePaths[i]] = new RegExp('^(' + this.packagePaths[i].replace(/\*/g, '[^\\/]+') + ')(\/|$)')));
+          if (match) {
+            pkgPath = match[1];
+            break;
           }
+        }
 
-          // apply submap checking without then with defaultExtension
-          var subPath = '.' + normalized.substr(pkgName.length);
-          var mapped = applyMap(pkg.map, subPath) || defaultExtension && applyMap(pkg.map, subPath + defaultExtension);
-          if (mapped)
-            normalized = mapped.substr(0, 2) == './' ? pkgName + mapped.substr(1) : normalize.call(loader, mapped);
-          else
-            normalized += defaultExtension;
+        if (pkgPath && (!pkgName || pkgName != pkgPath || loader.packages[pkgName].loadConfig !== false)) {
+          return (pkgConfigPromises[pkgPath] || 
+            (pkgConfigPromises[pkgPath] = 
+              loader['fetch']({ name: pkgPath + '.json', address: pkgPath + '.json', metadata: {} })
+              .then(function(source) {
+                try {
+                  return JSON.parse(source);
+                }
+                catch(e) {
+                  throw new Error('Invalid JSON in package configuration file ' + pkgPath);
+                }
+              })
+              .then(function(cfg) {
+                // deeply-merge (to first level) config with any existing package config
+                if (pkgName && pkgName == pkgPath)
+                  extendMeta(cfg, loader.packages[pkgPath]);
 
-
-          return normalized;
-        });
+                loader.packages[pkgPath] = cfg;
+              })
+            )
+          )
+          .then(function() {
+            // finally apply the package config we just created to the current request
+            return applyPackageConfig.call(loader, normalized, pkgPath, sync, defaultJSExtension);
+          });
+        }
       }
+
+      if (pkgName)
+        return applyPackageConfig.call(loader, normalized, pkgName, sync, defaultJSExtension);
       
       // add back defaultJSExtension if not a package
       if (defaultJSExtension)
@@ -2655,6 +2818,16 @@ hook('normalize', function(normalize) {
 
       return normalized;
     };
+  }
+
+  SystemJSLoader.prototype.normalizeSync = SystemJSLoader.prototype.normalize;
+
+  hook('normalizeSync', function(normalize) {
+    return createPackageNormalize(normalize, true);
+  });
+
+  hook('normalize', function(normalize) {
+    return createPackageNormalize(normalize, false);
   });
 
   hook('locate', function(locate) {
@@ -2665,6 +2838,8 @@ hook('normalize', function(normalize) {
         var pkgName = getPackage.call(loader, load.name);
         if (pkgName) {
           var pkg = loader.packages[pkgName];
+
+          var basePath = getBasePath(pkg);
           
           // format
           if (pkg.format)
@@ -2680,20 +2855,27 @@ hook('normalize', function(normalize) {
             var bestDepth = 0;
             var wildcardIndex;
             for (var module in pkg.meta) {
+              // allow meta to start with ./ for flexibility
+              var dotRel = module.substr(0, 2) == './' ? './' : '';
+              if (dotRel)
+                module = module.substr(2);
+
               wildcardIndex = module.indexOf('*');
               if (wildcardIndex === -1)
                 continue;
-              if (module.substr(0, wildcardIndex) === load.name.substr(0, wildcardIndex)
+
+              if (basePath + module.substr(0, wildcardIndex) === load.name.substr(pkgName.length + 1, wildcardIndex + basePath.length)
                   && module.substr(wildcardIndex + 1) === load.name.substr(load.name.length - module.length + wildcardIndex + 1)) {
                 var depth = module.split('/').length;
                 if (depth > bestDepth)
                   bestDetph = depth;
-                extendMeta(meta, pkg.meta[module], bestDepth != depth);
+                extendMeta(meta, pkg.meta[dotRel + module], bestDepth != depth);
               }
             }
             // exact meta
-            var exactMeta = pkg.meta[load.name.substr(pkgName.length + 1)];
-            if (exactMeta)
+            var metaName = load.name.substr(pkgName.length + basePath.length + 1);
+            var exactMeta = pkg.meta[metaName] || pkg.meta['./' + metaName];
+            if (exactMeta && load.name.substr(pkgName.length + 1, basePath.length) == basePath)
               extendMeta(meta, exactMeta);
 
             // allow alias and loader to be package-relative
@@ -2725,29 +2907,56 @@ hook('normalize', function(normalize) {
   function normalizePlugin(normalize, name, parentName, sync) {
     var loader = this;
     // if parent is a plugin, normalize against the parent plugin argument only
-    var parentPluginIndex;
-    if (parentName && (parentPluginIndex = parentName.indexOf('!')) != -1)
-      parentName = parentName.substr(0, parentPluginIndex);
+    if (parentName) {
+      var parentPluginIndex;
+      if (loader.pluginFirst) {
+        if ((parentPluginIndex = parentName.lastIndexOf('!')) != -1)
+          parentName = parentName.substr(parentPluginIndex + 1);
+      }
+      else {
+        if ((parentPluginIndex = parentName.indexOf('!')) != -1)
+          parentName = parentName.substr(0, parentPluginIndex);
+      }
+    }
 
     // if this is a plugin, normalize the plugin name and the argument
     var pluginIndex = name.lastIndexOf('!');
     if (pluginIndex != -1) {
-      var argumentName = name.substr(0, pluginIndex);
-      var pluginName = name.substr(pluginIndex + 1) || argumentName.substr(argumentName.lastIndexOf('.') + 1);
+      var argumentName;
+      var pluginName;
+
+      if (loader.pluginFirst) {
+        argumentName = name.substr(pluginIndex + 1);
+        pluginName = name.substr(0, pluginIndex);
+      }
+      else {
+        argumentName = name.substr(0, pluginIndex);
+        pluginName = name.substr(pluginIndex + 1) || argumentName.substr(argumentName.lastIndexOf('.') + 1);
+      }
 
       // note if normalize will add a default js extension
       // if so, remove for backwards compat
       // this is strange and sucks, but will be deprecated
       var defaultExtension = loader.defaultJSExtensions && argumentName.substr(argumentName.length - 3, 3) != '.js';
 
+      // put name back together after parts have been normalized
+      function normalizePluginParts(argumentName, pluginName) {
+        if (defaultExtension && argumentName.substr(argumentName.length - 3, 3) == '.js')
+          argumentName = argumentName.substr(0, argumentName.length - 3);
+
+        if (loader.pluginFirst) {
+          return pluginName + '!' + argumentName;
+        }
+        else {
+          return argumentName + '!' + pluginName;
+        }
+      }
+
       if (sync) {
         argumentName = loader.normalizeSync(argumentName, parentName);
         pluginName = loader.normalizeSync(pluginName, parentName);
 
-        if (defaultExtension && argumentName.substr(argumentName.length - 3, 3) == '.js')
-          argumentName = argumentName.substr(0, argumentName.length - 3);
-
-        return argumentName + '!' + pluginName;
+        return normalizePluginParts(argumentName, pluginName);
       }
       else {
         return Promise.all([
@@ -2755,10 +2964,7 @@ hook('normalize', function(normalize) {
           loader.normalize(pluginName, parentName)
         ])
         .then(function(normalized) {
-          argumentName = normalized[0];
-          if (defaultExtension && argumentName.substr(argumentName.length - 3, 3) == '.js')
-            argumentName = argumentName.substr(0, argumentName.length - 3);
-          return argumentName + '!' + normalized[1];
+          return normalizePluginParts(normalized[0], normalized[1]);
         });
       }
     }
@@ -2787,10 +2993,18 @@ hook('normalize', function(normalize) {
       var name = load.name;
 
       // plugin syntax
-      var pluginSyntaxIndex = name.lastIndexOf('!');
-      if (pluginSyntaxIndex != -1) {
-        load.metadata.loader = name.substr(pluginSyntaxIndex + 1);
-        load.name = name.substr(0, pluginSyntaxIndex);
+      var pluginSyntaxIndex;
+      if (loader.pluginFirst) {
+        if ((pluginSyntaxIndex = name.indexOf('!')) != -1) {
+          load.metadata.loader = name.substr(0, pluginSyntaxIndex);
+          load.name = name.substr(pluginSyntaxIndex + 1);
+        }
+      }
+      else {
+        if ((pluginSyntaxIndex = name.lastIndexOf('!')) != -1) {
+          load.metadata.loader = name.substr(pluginSyntaxIndex + 1);
+          load.name = name.substr(0, pluginSyntaxIndex);
+        }
       }
 
       return locate.call(loader, load)
@@ -2811,7 +3025,6 @@ hook('normalize', function(normalize) {
         .then(function(loaderModule) {
           // store the plugin module itself on the metadata
           load.metadata.loaderModule = loaderModule;
-          load.metadata.loaderArgument = name;
 
           load.address = address;
           if (loaderModule.locate)
@@ -2989,7 +3202,7 @@ hook('normalize', function(normalize) {
       var bestDepth = 0;
       var wildcardIndex;
       for (var module in meta) {
-        wildcardIndex = indexOf.call(module, '*');
+        wildcardIndex = module.indexOf('*');
         if (wildcardIndex === -1)
           continue;
         if (module.substr(0, wildcardIndex) === name.substr(0, wildcardIndex)
@@ -3124,7 +3337,7 @@ hook('normalize', function(normalize) {
   hook('fetch', function(fetch) {
     return function(load) {
       var loader = this;
-      if (loader.trace)
+      if (loader.trace || loader.builder)
         return fetch.call(loader, load);
       
       // if already defined, no need to load a bundle
@@ -3238,7 +3451,8 @@ hook('normalize', function(normalize) {
 
       // standard environment module, starting small as backwards-compat matters!
       this.set('@system-env', this.newModule({
-        browser: isBrowser
+        browser: isBrowser,
+        node: !!this._nodeRequire
       }));
     };
   });
