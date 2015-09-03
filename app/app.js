@@ -42,7 +42,7 @@ export class App {
 
         prompt(
           'Please copy this link. Please?',
-          'http://localhost:9000?game=' + game.id
+          'http://playkyu.com/?game=' + game.id
         );
       });
 
