@@ -1,14 +1,14 @@
-import { inject, bindable } from 'aurelia-framework';
-import { App } from 'app';
+import { bindable } from 'aurelia-framework';
 
-// TODO remove reference to app, need to handle this differently
-@inject(App, Element)
-@bindable('game')
 export class BoardCustomElement {
 
-	// @bindable game;
+	@bindable game;
 
-	constructor(app) {
-		this.player1 = app.player1;
-	}
+  gameChanged(game) {
+    this.player1 = Array.from(game.players)[0];
+  }
+
+  getCardAtPos(pos) {
+    return this.game.board[pos];
+  }
 }
